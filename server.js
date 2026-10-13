@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const { z } = require('zod');
 const bcrypt = require('bcryptjs');
-const { encrypt, decrypt } = require('./crypto_service');
+const { encrypt, decrypt, encryptionKey } = require('./crypto_service');
 const app = express();
 
 // Socle volontairement réduit : les protections demandées par le TP restent à ajouter.
@@ -217,14 +217,17 @@ app.get('/api/v1/bank-details/:id', authenticate, requirePermission('bank:read:a
   res.json({ id: record.id, iban: decrypt(record.encrypted)})
 })
 
-
-// TODO 2 : créer l'authentification JWT et la matrice RBAC admin/auditor/user.
-// TODO 3 : exposer login/refresh avec un cookie HttpOnly, Secure, SameSite=Strict.
 // TODO 4 : chiffrer les coordonnées bancaires avec crypto_service.js.
 // TODO 5 : empêcher une modification hors heures ouvrées ou d'un document closed.
 
 const port = process.env.PORT || 3005;
 if (require.main === module) {
+  // Valide au démarrage la présence et la robustesse de tous les secrets nécessaires
+  secret('JWT_ACCESS_SECRET');
+  secret('JWT_REFRESH_SECRET');
+  encryptionKey();
+  users();
+  
   app.listen(port, () => console.log(`TP4 démarré sur http://localhost:${port}`));
 }
 
